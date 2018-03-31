@@ -27,12 +27,26 @@ pub struct Num {
 
 #[derive(Debug)]
 pub struct CompoundUnit {
-    simples: Vec<SimpleUnit>,
+    inner: Vec<QualifiedUnit>,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct QualifiedUnit {
+    si_prefix: SiPrefix,
+    simple_unit: SimpleUnit,
+    power: i16,
 }
 
 #[derive(Copy, Clone, Debug)]
 pub enum SimpleUnit {
     Meter,
+
+    Second,
+}
+#[derive(Copy, Clone, Debug)]
+pub enum SiPrefix {
+    None,
+    TenToThe(i16),
 }
 
 impl Num {
