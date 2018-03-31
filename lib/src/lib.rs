@@ -27,7 +27,8 @@ pub struct Num {
 
 #[derive(Debug)]
 pub struct CompoundUnit {
-    inner: Vec<QualifiedUnit>,
+    upper: Vec<QualifiedUnit>,
+    lower: Vec<QualifiedUnit>,
 }
 
 #[derive(Copy, Clone, Debug)]

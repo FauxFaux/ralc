@@ -25,6 +25,7 @@ enum Fail {
     SiPrefix,
     SimplePower,
     SimplePowerNum,
+    UnitOverJune,
 }
 
 named!(input<CompleteStr, Expr>, add_return_error!(Fail::Input.into(),
@@ -50,8 +51,22 @@ named!(num_expr<CompleteStr, Num>, add_return_error!(Fail::NumExpr.into(),
 
 named!(unit_expr<CompleteStr, CompoundUnit>, add_return_error!(Fail::UnitExpr.into(),
     alt_complete!(
-        many1!(qualified_unit) => { |inner| CompoundUnit { inner } }
+        unit_over_june
 )));
+
+named!(unit_over_june<CompleteStr, CompoundUnit>, add_return_error!(Fail::UnitOverJune.into(),
+    do_parse!(
+        upper: unit_list >>
+        lower: opt!(preceded!(
+            alt_complete!(tag!("/") | tag!(" per ")),
+            unit_list
+        )) >>
+        ( CompoundUnit { upper, lower: lower.unwrap_or_else(Vec::new) } )
+)));
+
+named!(unit_list<CompleteStr, Vec<QualifiedUnit>>,
+    many1!(qualified_unit)
+);
 
 named!(digits<CompleteStr, CompleteStr>, add_return_error!(Fail::Digits.into(),
     take_while1_s!(digit)
