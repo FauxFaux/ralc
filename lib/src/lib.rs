@@ -12,6 +12,8 @@ pub use parse::parse_expr;
 #[derive(Debug)]
 pub enum Expr {
     Value(Value),
+    Sum(Vec<Expr>),
+    Product(Vec<Expr>),
 }
 
 #[derive(Debug)]

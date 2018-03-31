@@ -15,6 +15,10 @@ use errors::*;
 #[derive(Copy, Clone)]
 enum Fail {
     Input,
+    Summands,
+    SummandsFollow,
+    Factors,
+    FactorsFollow,
     Value,
     NumExpr,
     Digits,
@@ -30,8 +34,30 @@ enum Fail {
 
 named!(input<CompleteStr, Expr>, add_return_error!(Fail::Input.into(),
     alt_complete!(
-        value => { |v| Expr::Value(v) }
+        summands
     )
+));
+
+named!(summands<CompleteStr, Expr>, add_return_error!(Fail::Summands.into(),
+    do_parse!(
+        list: separated_nonempty_list_complete!(
+            tag!("+"),
+            return_error!(Fail::SummandsFollow.into(), factors)) >>
+        ( Expr::Sum(list) )
+)));
+
+named!(factors<CompleteStr, Expr>, add_return_error!(Fail::Factors.into(),
+    do_parse!(
+        list: separated_nonempty_list_complete!(
+            tag!("*"),
+            return_error!(Fail::FactorsFollow.into(), value_expr)) >>
+        ( Expr::Product(list) )
+)));
+
+named!(value_expr<CompleteStr, Expr>,
+    do_parse!(
+        value: value >>
+        ( Expr::Value(value) )
 ));
 
 /// e.g. "¼m", "7/3"
