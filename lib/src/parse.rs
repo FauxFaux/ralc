@@ -24,6 +24,8 @@ enum Fail {
     Digits,
     SmallSignedInt,
     UnitExpr,
+    SiUnit,
+    SiUnitThen,
     QualifiedUnit,
     SimpleUnit,
     SiPrefix,
@@ -102,14 +104,20 @@ named!(small_signed_int<CompleteStr, i16>, add_return_error!(Fail::SmallSignedIn
     flat_map!(recognize!(pair!(opt!(tag!("-")), digits)), parse_to!(i16))
 ));
 
+named!(si_unit<CompleteStr, (SiPrefix, SimpleUnit)>, add_return_error!(Fail::SiUnit.into(),
+    alt_complete!(
+        pair!(si_prefix, simple_unit) |
+        simple_unit => { |unit| (SiPrefix::None, unit) }
+    )
+));
+
 named!(qualified_unit<CompleteStr, QualifiedUnit>, add_return_error!(Fail::QualifiedUnit.into(),
     do_parse!(
-        si_prefix: opt!(si_prefix) >>
-        simple_unit: simple_unit >>
+        si_unit: si_unit >>
         power: opt!(simple_power) >>
         ( QualifiedUnit {
-            si_prefix: si_prefix.unwrap_or(SiPrefix::None),
-            simple_unit,
+            si_prefix: si_unit.0,
+            simple_unit: si_unit.1,
             power: power.unwrap_or(1),
         })
 )));
