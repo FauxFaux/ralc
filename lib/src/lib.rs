@@ -1,9 +1,12 @@
 extern crate bigdecimal;
+extern crate cast;
 #[macro_use]
 extern crate error_chain;
 
 #[macro_use]
 extern crate nom;
+extern crate num_bigint;
+extern crate num_traits;
 
 mod errors;
 mod eval;
@@ -11,7 +14,11 @@ mod eval;
 mod eval_tests;
 mod parse;
 
+use cast::u64;
 use bigdecimal::BigDecimal;
+use num_traits::One;
+use num_bigint::Sign;
+use num_bigint::BigUint;
 
 pub use parse::parse_expr;
 
@@ -29,8 +36,15 @@ pub struct Value {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Rational {
+    sign: Sign,
+    top: BigUint,
+    bottom: BigUint,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Num {
-    real: BigDecimal,
+    real: Rational,
 }
 
 // TODO: Need to think about whether this derived Eq implementation does what I mean.
@@ -60,11 +74,35 @@ pub enum SiPrefix {
     TenToThe(i16),
 }
 
+impl Rational {
+    fn int_from_str<S: AsRef<str>>(digits: S) -> Rational {
+        use std::str::FromStr;
+        Rational {
+            sign: Sign::Plus,
+            top: BigUint::from_str(digits.as_ref()).unwrap(),
+            bottom: BigUint::one(),
+        }
+    }
+
+    fn int_from_i64(val: i64) -> Rational {
+        let (sign, pos) = if val < 0 {
+            (Sign::Minus, u64(-val).unwrap())
+        } else {
+            (Sign::Plus, u64(val).unwrap())
+        };
+
+        Rational {
+            sign,
+            top: pos.into(),
+            bottom: BigUint::one(),
+        }
+    }
+}
+
 impl Num {
     fn from_digits<S: AsRef<str>>(digits: S) -> Num {
-        use std::str::FromStr;
         Num {
-            real: BigDecimal::from_str(digits.as_ref()).unwrap(),
+            real: Rational::int_from_str(digits),
         }
     }
 }
@@ -79,6 +117,21 @@ impl std::ops::Add for Num {
     }
 }
 
+impl std::ops::Add for Rational {
+    type Output = Rational;
+
+    fn add(self, rhs: Rational) -> Rational {
+        assert_eq!(Sign::Plus, self.sign);
+        assert_eq!(Sign::Plus, rhs.sign);
+        assert_eq!(self.bottom, rhs.bottom);
+        Rational {
+            top: self.top + rhs.top,
+            bottom: self.bottom,
+            sign: self.sign,
+        }
+    }
+}
+
 impl std::ops::Mul for Num {
     type Output = Num;
 
@@ -89,10 +142,26 @@ impl std::ops::Mul for Num {
     }
 }
 
+impl std::ops::Mul for Rational {
+    type Output = Rational;
+
+    fn mul(self, rhs: Rational) -> Rational {
+        assert_eq!(Sign::Plus, self.sign);
+        assert_eq!(Sign::Plus, rhs.sign);
+        Rational {
+            top: self.top * rhs.top,
+            bottom: self.bottom * rhs.bottom,
+            sign: self.sign,
+        }
+    }
+}
+
 impl Value {
     fn from_int(val: i64) -> Value {
         Value {
-            num: Num { real: val.into() },
+            num: Num {
+                real: Rational::int_from_i64(val),
+            },
             unit: None,
         }
     }

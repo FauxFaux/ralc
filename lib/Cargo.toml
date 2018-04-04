@@ -4,8 +4,11 @@ version = "0.1.0"
 authors = ["Chris West (Faux) <git@goeswhere.com>"]
 
 [dependencies]
-error-chain = "0.11.0"
 bigdecimal = "0.0.11"
+cast = "0.2"
+error-chain = "0.11"
+num-bigint = "0.1"
+num-traits = "0.2"
 
 [dependencies.nom]
 version = "4.0.0-beta2"
