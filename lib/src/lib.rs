@@ -69,11 +69,53 @@ impl Num {
     }
 }
 
+impl std::ops::Add for Num {
+    type Output = Num;
+
+    fn add(self, rhs: Num) -> Num {
+        Num {
+            real: self.real + rhs.real,
+        }
+    }
+}
+
+impl std::ops::Mul for Num {
+    type Output = Num;
+
+    fn mul(self, rhs: Num) -> Num {
+        Num {
+            real: self.real * rhs.real,
+        }
+    }
+}
+
 impl Value {
     fn from_int(val: i64) -> Value {
         Value {
             num: Num { real: val.into() },
             unit: None,
+        }
+    }
+
+    fn plus(self, other: Value) -> Value {
+        if other.unit == self.unit {
+            Value {
+                num: self.num + other.num,
+                unit: self.unit,
+            }
+        } else {
+            unimplemented!("+: different units: {:?} + {:?}", self.unit, other.unit)
+        }
+    }
+
+    fn mul(self, other: Value) -> Value {
+        if other.unit == self.unit {
+            Value {
+                num: self.num * other.num,
+                unit: self.unit,
+            }
+        } else {
+            unimplemented!("*: different units: {:?} + {:?}", self.unit, other.unit)
         }
     }
 }
